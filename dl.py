@@ -8,6 +8,8 @@ print("Lien : OK -> ", lien)
 titre = yt.title
 print("Titre : OK -> ", titre)
 print("Début du téléchargement ...")
-yt.streams.get_lowest_resolution().download(filename=nomFichier)
+#yt.streams.get_lowest_resolution().download(filename=nomFichier)
 print("Download : OK -> ", nomFichier)
+
+print(yt.length)
 

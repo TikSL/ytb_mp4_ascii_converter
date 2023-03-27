@@ -136,7 +136,7 @@ def main():
     #     scale = float(args.scale)
 
     # set cols
-    cols = 500
+    cols = 450
     # if args.cols:
     #     cols = int(args.cols)
 
@@ -150,7 +150,7 @@ def main():
 
         if ret:
             # bloc ="\n"*5
-            if currentframe % 10 == 0:
+            if currentframe % 5 == 0:
                 name = str(currentframe) + '.jpg'
                 cv2.imwrite(name, frame)
                 # print("Génération image ...", name)
@@ -167,7 +167,8 @@ def main():
                 # sys.stdout.write(bloc)
                 # cleanup
                 f.close()
-                print("Génération fichier OK", outFile)
+                if currentframe % 100 == 0:
+                    print("Génération fichier OK", outFile)
                 fichiers.append(outFile)
 
             currentframe += 1
@@ -178,16 +179,16 @@ def main():
     video.release()
     cv2.destroyAllWindows()
 
-    input("Please press the Enter key to proceed")
-
-    for fichier in fichiers:
-        f = open(fichier, 'r')
-        sys.stdout.write(f.read())
-        time.sleep(0.2)
-        f.close()
+    # input("Please press the Enter key to proceed")
+    #
+    # for fichier in fichiers:
+    #     f = open(fichier, 'r')
+    #     sys.stdout.write(f.read())
+    #     time.sleep(0.2)
+    #     f.close()
 
 if __name__ == '__main__':
-    input("Please press the Enter key to proceed")
+    # input("Please press the Enter key to proceed")
     t1 = time.time()
     main()
     t2 = time.time()
