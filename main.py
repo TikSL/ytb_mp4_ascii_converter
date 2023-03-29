@@ -10,6 +10,7 @@ import cv2
 
 import time
 import os
+import shutil
 import sys
 
 # 70 levels of gray
@@ -113,21 +114,15 @@ def main():
     # descStr = "This program converts an image into ASCII art."
     # parser = argparse.ArgumentParser(description=descStr)
     # add expected arguments
-    # parser.add_argument('--file', dest='imgFile', required=True)
     # parser.add_argument('--scale', dest='scale', required=False)
-    # parser.add_argument('--out', dest='outFile', required=False)
     # parser.add_argument('--cols', dest='cols', required=False)
     # parser.add_argument('--morelevels', dest='moreLevels', action='store_true')
 
     # parse args
     # args = parser.parse_args()
 
-    imgFile = 'test.jpg'
-
     # set output file
     outFile = 'out0.txt'
-    # if args.outFile:
-    #     outFile = args.outFile
 
     # set scale default as 0.43 which suits
     # a Courier font
@@ -136,29 +131,38 @@ def main():
     #     scale = float(args.scale)
 
     # set cols
-    cols = 450
+    cols = 1
     # if args.cols:
     #     cols = int(args.cols)
 
     nom_fichier = "video_test.mp4"
+    folder_frames = os.path.join(os.getcwd(), "frames")
+    if "frames" not in os.listdir():
+        os.makedirs(folder_frames)
+    else:
+        shutil.rmtree(folder_frames)
+        os.makedirs(folder_frames)
     video = cv2.VideoCapture(nom_fichier)
     fichiers = []
 
     currentframe = 0
+
     while True:
         ret, frame = video.read()
 
         if ret:
-            # bloc ="\n"*5
-            if currentframe % 5 == 0:
-                name = str(currentframe) + '.jpg'
+
+            if currentframe % 10 == 0:
+                name = os.path.join(folder_frames, str(currentframe) + '.jpg')
+
                 cv2.imwrite(name, frame)
                 # print("Génération image ...", name)
                 # convert image to ascii txt
                 aimg = covertImageToAscii(name, cols, scale, "")
                 # open file
                 # print("Génération fichier ...", outFile)
-                f = open(outFile, 'w')
+                file = os.path.join(folder_frames, outFile)
+                f = open(file, 'w')
 
                 # write to file
                 for row in aimg:
@@ -186,6 +190,7 @@ def main():
     #     sys.stdout.write(f.read())
     #     time.sleep(0.2)
     #     f.close()
+
 
 if __name__ == '__main__':
     # input("Please press the Enter key to proceed")
