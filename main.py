@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Python code to convert an image to ASCII image.
 import sys, random, argparse
 import numpy as np
@@ -21,17 +19,10 @@ gscale2 = '@%#*+=-:. '
 
 
 def getAverageL(image):
-    """
-    Given PIL Image, return average value of grayscale value
-    """
-    # get image as numpy array
-    im = np.array(image)
-
-    # get shape
-    w, h = im.shape
-
-    # get average
-    return np.average(im.reshape(w * h))
+    # renvoie valeur moyenne du niveau de gris
+    tab_image = np.array(image)
+    largeur, hauteur = tab_image.shape
+    return np.average(tab_image.reshape(largeur * hauteur))
 
 
 def covertImageToAscii(fileName, cols, scale, moreLevels):
@@ -131,18 +122,21 @@ def main():
     #     scale = float(args.scale)
 
     # set cols
-    cols = 1
+    cols = 10
     # if args.cols:
     #     cols = int(args.cols)
 
-    nom_fichier = "video_test.mp4"
-    folder_frames = os.path.join(os.getcwd(), "frames")
-    if "frames" not in os.listdir():
+    nom_fichier = "video_to_ascii.mp4"
+
+    folder_frames = os.path.join(os.getcwd(), "output")
+    if "output" not in os.listdir():
         os.makedirs(folder_frames)
     else:
         shutil.rmtree(folder_frames)
         os.makedirs(folder_frames)
+
     video = cv2.VideoCapture(nom_fichier)
+
     fichiers = []
 
     currentframe = 0
@@ -152,7 +146,7 @@ def main():
 
         if ret:
 
-            if currentframe % 10 == 0:
+            if currentframe % 5 == 0:
                 name = os.path.join(folder_frames, str(currentframe) + '.jpg')
 
                 cv2.imwrite(name, frame)
@@ -171,30 +165,34 @@ def main():
                 # sys.stdout.write(bloc)
                 # cleanup
                 f.close()
+                fichiers.append(file)
+
+                os.remove(name)
+
                 if currentframe % 100 == 0:
                     print("Génération fichier OK", outFile)
-                fichiers.append(outFile)
+
+
+
 
             currentframe += 1
-            outFile = "out" + str(currentframe) +".txt"
+            outFile = str(currentframe) +".txt"
 
         else:
             break
     video.release()
     cv2.destroyAllWindows()
 
-    # input("Please press the Enter key to proceed")
-    #
-    # for fichier in fichiers:
-    #     f = open(fichier, 'r')
-    #     sys.stdout.write(f.read())
-    #     time.sleep(0.2)
-    #     f.close()
+    input("Please press the Enter key to proceed")
+
+    for fichier in fichiers:
+        print(fichier)
+        # f = open(fichier, 'r')
+        # sys.stdout.write(f.read())
+        # time.sleep(0.2)
+        # f.close()
 
 
 if __name__ == '__main__':
-    # input("Please press the Enter key to proceed")
-    t1 = time.time()
+
     main()
-    t2 = time.time()
-    print(t2 - t1)

@@ -7,7 +7,7 @@ import sys
 pytube.request.default_range_size = 9437184
 
 
-def on_progress(stream, bytes_remaining):
+def on_progress(stream, file_handle, bytes_remaining):
     taille_totale = stream.filesize
     taille_dl = taille_totale - bytes_remaining
     taux_dl = round(taille_dl / taille_totale * 100, 1)
@@ -28,17 +28,23 @@ def download():
 
     nom_fichier = args.nom_fichier + ".mp4"
     lien = args.lien
+    qualite = args.qualite
 
     yt = YouTube(lien)
     yt.register_on_progress_callback(on_progress)
+
+    if qualite == 'high':
+        resolution = yt.streams.get_highest_resolution()
+    else :
+        resolution = yt.streams.get_lowest_resolution()
 
     print("Lien : OK -> ", lien)
 
     print(f'Titre : {yt.title}\n'
           f'Durée : {yt.length} s\n'
-          f'Taille du fichier : {round(yt.streams.get_lowest_resolution().filesize / 10000, 2)} Ko')
+          f'Taille du fichier : {round(resolution.filesize / 10000, 2)} Ko')
 
-    yt.streams.get_lowest_resolution().download(filename=nom_fichier)
+    resolution.download(filename=nom_fichier)
     
     print("Download : OK -> ", nom_fichier)
 
