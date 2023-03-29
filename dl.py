@@ -44,5 +44,4 @@ def download():
 
 
 if __name__ == '__main__':
-    # input("Please press the Enter key to proceed")
     download()
