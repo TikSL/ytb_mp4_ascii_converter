@@ -1,198 +1,167 @@
-# Python code to convert an image to ASCII image.
-import sys, random, argparse
-import numpy as np
-import math
-
-from PIL import Image
+import time
+import argparse
+import sys
 import cv2
 
-import time
-import os
-import shutil
-import sys
-
-# 70 levels of gray
-gscale1 = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
-
-# 10 levels of gray
-gscale2 = '@%#*+=-:. '
+# 10 niveaux de gris
+niv_gris = '@%#*+=-:. '
 
 
-def getAverageL(image):
-    # renvoie valeur moyenne du niveau de gris
-    tab_image = np.array(image)
-    largeur, hauteur = tab_image.shape
-    return np.average(tab_image.reshape(largeur * hauteur))
+def coverImageToAscii(image, W, H, cols, rows, scale):
 
-
-def covertImageToAscii(fileName, cols, scale, moreLevels):
-    """
-    Given Image and dims (rows, cols) returns an m*n list of Images
-    """
-    # declare globals
-    global gscale1, gscale2
-
-    # open image and convert to grayscale
-    image = Image.open(fileName).convert('L')
-
-    # store dimensions
-    W, H = image.size[0], image.size[1]
-    # print("input image dims: %d x %d" % (W, H))
-
-    # compute width of tile
     w = W / cols
-
-    # compute tile height based on aspect ratio and scale
     h = w / scale
 
-    # compute number of rows
-    rows = int(H / h)
-
-    # print("cols: %d, rows: %d" % (cols, rows))
-    # print("tile dims: %d x %d" % (w, h))
-
-    # check if image size is too small
-    if cols > W or rows > H:
-        print("Image too small for specified cols!")
-        exit(0)
-
-    # ascii image is a list of character strings
-    aimg = []
-    # generate list of dimensions
+    aimg = ""
     for j in range(rows):
         y1 = int(j * h)
         y2 = int((j + 1) * h)
 
-        # correct last tile
         if j == rows - 1:
             y2 = H
 
-        # append an empty string
-        aimg.append("")
-
         for i in range(cols):
 
-            # crop image to tile
             x1 = int(i * w)
             x2 = int((i + 1) * w)
 
-            # correct last tile
             if i == cols - 1:
                 x2 = W
 
-            # crop image to extract tile
-            img = image.crop((x1, y1, x2, y2))
+            gris_image = []
+            for x in range(x1,x2-1):
+                for y in range(y1,y2-1):
+                    gris_image.append(image[y, x])
 
-            # get average luminance
-            avg = int(getAverageL(img))
+            avg = sum(gris_image) / len(gris_image)
+            gsval = niv_gris[int((avg * 9) / 255)]
+            aimg += gsval
 
-            # look up ascii char
-            if moreLevels:
-                gsval = gscale1[int((avg * 69) / 255)]
-            else:
-                gsval = gscale2[int((avg * 9) / 255)]
-
-            # append ascii char to string
-            aimg[j] += gsval
-
-    # return txt image
     return aimg
 
 
 # main() function
 def main():
-    #create parser
-    # descStr = "This program converts an image into ASCII art."
-    # parser = argparse.ArgumentParser(description=descStr)
-    # add expected arguments
-    # parser.add_argument('--scale', dest='scale', required=False)
-    # parser.add_argument('--cols', dest='cols', required=False)
-    # parser.add_argument('--morelevels', dest='moreLevels', action='store_true')
+    description = "This program converts an image into ASCII art."
+    parser = argparse.ArgumentParser(description=description)
+
+    parser.add_argument('-c', '--cols', dest='cols', required=False, default=100)
+    parser.add_argument('-t', '--nbr_te', dest='coef_tempo', required=False, default=2)
+    parser.add_argument('-i', '--nbr_im', dest='coef_image', required=False, default=2)
 
     # parse args
-    # args = parser.parse_args()
+    args = parser.parse_args()
 
-    # set output file
-    outFile = 'out0.txt'
-
-    # set scale default as 0.43 which suits
-    # a Courier font
+    # Constantes utiles
     scale = 0.43
-    # if args.scale:
-    #     scale = float(args.scale)
+    cols = int(args.cols)
+    coef_image = int(args.coef_image)
+    coef_tempo = int(args.coef_tempo)
 
-    # set cols
-    cols = 10
-    # if args.cols:
-    #     cols = int(args.cols)
+    fichier_source = "video_to_ascii.mp4"
+    fichier_sortie = "out_ascii.txt"
+    fichier_info = "info.txt"
 
-    nom_fichier = "video_to_ascii.mp4"
+    # Acquisition vidéo
+    video = cv2.VideoCapture(fichier_source)
 
-    folder_frames = os.path.join(os.getcwd(), "output")
-    if "output" not in os.listdir():
-        os.makedirs(folder_frames)
-    else:
-        shutil.rmtree(folder_frames)
-        os.makedirs(folder_frames)
+    # Caractéristiques de la vidéo
+    nombre_image = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    fps = video.get(cv2.CAP_PROP_FPS)
+    cols_video = video.get(cv2.CAP_PROP_FRAME_WIDTH)
+    rows_video = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
-    video = cv2.VideoCapture(nom_fichier)
+    # compute width of tile
+    w = cols_video / cols
+    # compute tile height based on aspect ratio and scale
+    h = w / scale
+    # compute number of rows
+    rows = int(rows_video / h)
 
-    fichiers = []
+    # Vérification format image
+    if cols > cols_video or rows > rows_video:
+        print("L'image est trop petite pour un tel nombre de colonnes !")
+        return
+
+    # Génération du fichier info
+    finfos = open("info.txt", 'w')
+    finfos.write(f"Nombre images =          {nombre_image}\n"
+                 f"FPS =                    {fps}\n"
+                 f"Coef image =             {coef_image}\n"
+                 f"Nombre colonnes video =  {cols_video}\n"
+                 f"Nombre lignes video =    {rows_video}\n"
+                 f"Nombre colonnes ASCII =  {cols}\n"
+                 f"Nombre lignes ASCII =    {rows}")
+    finfos.close()
 
     currentframe = 0
+    aimg_tot = ""
+
+    # Définition des variables de temps
+    t1 = time.time()
+    temps_restant = "???"
 
     while True:
         ret, frame = video.read()
-
         if ret:
+            if currentframe % coef_image == 0:
 
-            if currentframe % 5 == 0:
-                name = os.path.join(folder_frames, str(currentframe) + '.jpg')
+                gray_image = 255 - cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                aimg = coverImageToAscii(gray_image, int(cols_video), int(rows_video), cols, rows, scale)
+                aimg_tot += aimg + '\n'
 
-                cv2.imwrite(name, frame)
-                # print("Génération image ...", name)
-                # convert image to ascii txt
-                aimg = covertImageToAscii(name, cols, scale, "")
-                # open file
-                # print("Génération fichier ...", outFile)
-                file = os.path.join(folder_frames, outFile)
-                f = open(file, 'w')
+                # Calcul temps restant
+                if currentframe % coef_tempo == 0 and currentframe > 0:
+                    temps_fait = time.time() - t1
+                    temps_restant = (nombre_image - currentframe) / coef_tempo * temps_fait
+                    temps_restant = int(temps_restant)
+                    t1 = time.time()
 
-                # write to file
-                for row in aimg:
-                    f.write(row + '\n')
-                    # bloc += row + "\n"
-                # sys.stdout.write(bloc)
-                # cleanup
-                f.close()
-                fichiers.append(file)
-
-                os.remove(name)
-
-                if currentframe % 100 == 0:
-                    print("Génération fichier OK", outFile)
-
-
-
+                # Message évolution génération
+                sys.stdout.write(
+                    f"\rGénération fichier {fichier_sortie} : {round(currentframe / nombre_image * 100, 1)}% "
+                    f"- {currentframe}/{nombre_image} "
+                    f"- fin estimée dans {temps_restant} s.")
+                sys.stdout.flush()
 
             currentframe += 1
-            outFile = str(currentframe) +".txt"
 
         else:
             break
+
+    # Ecriture du fichier out_ascii.txt
+    fsortie = open(fichier_sortie, 'w')
+    fsortie.write(aimg_tot)
+    fsortie.close()
+
+#     # Libération vidéo
     video.release()
     cv2.destroyAllWindows()
 
-    input("Please press the Enter key to proceed")
+    # Pause pour préview
+    input("\nAppuyer sur une touche pour lancer la video ASCII")
 
-    for fichier in fichiers:
-        print(fichier)
-        # f = open(fichier, 'r')
-        # sys.stdout.write(f.read())
-        # time.sleep(0.2)
-        # f.close()
+    haut = "#" * cols + "\n"
+    milieu = "#" + " " * (cols - 2) + "#" + "\n"
+    preview = haut + milieu * (rows - 2) + haut
+
+    sys.stdout.write(preview)
+
+    # Pause pour valider preview
+    input("\nAppuyer sur une touche pour lancer la video ASCII")
+
+    f = open(fichier_sortie, 'r')
+
+    for k in range(0, nombre_image):
+        lignes = f.readline()
+        bloc = ""
+        for x in range(0, rows * cols, cols):
+            bloc += lignes[x:x + cols] + "\n"
+        sys.stdout.write(bloc)
+        time.sleep(1 / fps * coef_image)
+
+    f.close()
 
 
 if __name__ == '__main__':
-
     main()
